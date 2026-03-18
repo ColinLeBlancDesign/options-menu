@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Options Menu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500&family=Instrument+Serif&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100vw; height: 100vh; background: #000; font-family: 'Instrument Sans', sans-serif; overflow: hidden; }
+    .canvas { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+    .wrapper { position: relative; display: inline-block; }
+
+    /* Trigger button */
+    .btn-options {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 10px 20px; border-radius: 999px; cursor: pointer; color: #fff;
+      font-family: 'Instrument Sans', sans-serif; font-size: 15px; font-weight: 500;
+      letter-spacing: -0.15px; white-space: nowrap; outline: none;
+      border: 1px solid transparent;
+      background-image: linear-gradient(#101010, #101010), linear-gradient(to bottom, #262626, #1A1A1A);
+      background-origin: border-box; background-clip: padding-box, border-box;
+      transition: background-image 100ms ease, text-shadow 100ms ease, font-size 60ms ease, transform 60ms ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-options:hover {
+      background-image: linear-gradient(#121212, #121212), linear-gradient(to bottom, #535353, #2E2C2C);
+      text-shadow: 0px 2px 5.8px #444444;
+    }
+    .btn-options:active,
+    .btn-options.is-active {
+      background-image: linear-gradient(#000000, #000000), linear-gradient(to bottom, #211F1F, #181717);
+      font-size: 14.55px; text-shadow: none; transform: scale(0.98);
+    }
+    .btn-options:focus-visible { outline: 2px solid rgba(255,255,255,0.6); outline-offset: 2px; border-radius: 999px; }
+
+    /* Dropdown */
+    .menu {
+      position: absolute; bottom: calc(100% + 10px); left: 50%;
+      transform: translateX(-50%) scale(0.96); transform-origin: bottom center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 150ms cubic-bezier(.25,.46,.45,.94), transform 150ms cubic-bezier(.25,.46,.45,.94);
+      width: 179px; border-radius: 8px; padding: 5px; z-index: 100;
+      display: flex; flex-direction: column; gap: 8px;
+      border: 1px solid transparent;
+      background-image: linear-gradient(#101010, #101010), linear-gradient(to bottom, #262626, #1A1A1A);
+      background-origin: border-box; background-clip: padding-box, border-box;
+    }
+    .menu.open { opacity: 1; transform: translateX(-50%) scale(1); pointer-events: auto; }
+
+    /* Header row */
+    .menu-header {
+      display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+      width: 100%; padding: 8px 10px; border-radius: 4px; border: none;
+      background: transparent; cursor: pointer; text-align: left; outline: none;
+      transition: background 80ms ease, transform 60ms ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .menu-header:hover  { background: #1a1a1a; }
+    .menu-header:active,
+    .menu-header.is-active { background: rgba(255,255,255,0.06); transform: scale(0.97); }
+    .menu-header:focus-visible { outline: 2px solid rgba(255,255,255,0.6); outline-offset: 2px; border-radius: 4px; }
+    .menu-header .name { font-family: 'Instrument Sans', sans-serif; font-size: 15px; font-weight: 500; color: #fff; letter-spacing: -0.15px; line-height: normal; }
+    .menu-header .email { font-family: 'Instrument Sans', sans-serif; font-size: 12px; font-weight: 400; color: rgba(255,255,255,0.32); letter-spacing: -0.12px; line-height: normal; }
+
+    /* Nav group */
+    .menu-nav { display: flex; flex-direction: column; gap: 0; }
+
+    /* Menu items */
+    .menu-item {
+      display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px;
+      border-radius: 4px; background: transparent; border: none; cursor: pointer;
+      font-family: 'Instrument Sans', sans-serif; font-size: 15px; font-weight: 500;
+      color: #fff; letter-spacing: -0.15px; white-space: nowrap; text-align: left;
+      transition: background 80ms ease, transform 60ms ease; outline: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .menu-item:hover  { background: #1a1a1a; }
+    .menu-item:active,
+    .menu-item.is-active { background: rgba(255,255,255,0.06); transform: scale(0.97); }
+    .menu-item:focus-visible { outline: 2px solid rgba(255,255,255,0.6); outline-offset: 2px; border-radius: 4px; }
+    .menu-item.muted { color: rgba(255,255,255,0.32); }
+    .icon-logout { width: 15px; height: 15px; flex-shrink: 0; }
+
+    /* Suppress sticky :hover on touch devices */
+    @media (hover: none) {
+      .menu-header:hover { background: transparent; }
+      .menu-item:hover   { background: transparent; }
+      .btn-options:hover {
+        background-image: linear-gradient(#101010, #101010), linear-gradient(to bottom, #262626, #1A1A1A);
+        text-shadow: none;
+      }
+    }
+
+    /* Byline */
+    .byline {
+      position: fixed; bottom: 24px; left: 24px;
+      font-family: 'Instrument Serif', serif; font-size: 16px; color: #5C5C5C;
+      margin: 0; user-select: none; line-height: 1.2; letter-spacing: 0.032em;
+    }
+    .byline a { color: #5C5C5C; text-decoration: none; display: block; }
+    .byline a:hover { color: #888; }
+  </style>
+</head>
+<body>
+  <div class="canvas">
+    <div class="wrapper" id="wrapper">
+      <div class="menu" id="menu" role="menu" aria-labelledby="trigger" aria-hidden="true">
+        <button class="menu-header" role="menuitem" tabindex="-1">
+          <div class="name">John Doe</div>
+          <div class="email">john.doe@example.com</div>
+        </button>
+        <div class="menu-nav" role="none">
+          <button class="menu-item" role="menuitem" tabindex="-1">Your Agents</button>
+          <button class="menu-item" role="menuitem" tabindex="-1">Integrations</button>
+          <button class="menu-item" role="menuitem" tabindex="-1">Membership settings</button>
+        </div>
+        <button class="menu-item muted" role="menuitem" tabindex="-1">
+          <span>Sign Out</span>
+          <svg class="icon-logout" width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+            <path d="M10 10.625L13.125 7.5M13.125 7.5L10 4.375M13.125 7.5H5.625M5.625 13.125H3.125C2.79348 13.125 2.47554 12.9933 2.24112 12.7589C2.0067 12.5245 1.875 12.2065 1.875 11.875V3.125C1.875 2.79348 2.0067 2.47554 2.24112 2.24112C2.47554 2.0067 2.79348 1.875 3.125 1.875H5.625" stroke="white" stroke-opacity="0.32" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+      <button class="btn-options" id="trigger" aria-haspopup="menu" aria-expanded="false" aria-controls="menu">Options</button>
+    </div>
+  </div>
+
+  <p class="byline"><a href="https://www.colin.cv/" target="_blank" rel="noopener noreferrer" tabindex="-1">Colin<br>LeBlanc</a></p>
+
+  <script>
+    (function() {
+      var trigger = document.getElementById('trigger');
+      var menu    = document.getElementById('menu');
+      var wrapper = document.getElementById('wrapper');
+      var isOpen  = false;
+
+      function getItems() {
+        return Array.from(menu.querySelectorAll('[role="menuitem"]'));
+      }
+
+      function openMenu() {
+        isOpen = true;
+        menu.classList.add('open');
+        menu.removeAttribute('aria-hidden');
+        trigger.setAttribute('aria-expanded', 'true');
+        requestAnimationFrame(function() {
+          var items = getItems();
+          if (items.length) items[0].focus();
+        });
+      }
+
+      function closeMenu(opts) {
+        isOpen = false;
+        menu.classList.remove('open');
+        menu.setAttribute('aria-hidden', 'true');
+        trigger.setAttribute('aria-expanded', 'false');
+        if (opts && opts.returnFocus) trigger.focus();
+      }
+
+      /* Touch state helper */
+      function addTouchStates(el) {
+        el.addEventListener('touchstart', function() {
+          el.classList.add('is-active');
+        }, { passive: true });
+        el.addEventListener('touchend', function() {
+          el.classList.remove('is-active');
+        }, { passive: true });
+        el.addEventListener('touchcancel', function() {
+          el.classList.remove('is-active');
+        }, { passive: true });
+      }
+
+      addTouchStates(trigger);
+      addTouchStates(menu.querySelector('.menu-header'));
+      getItems().forEach(function(item) { addTouchStates(item); });
+
+      /* Trigger mouse/touch toggle */
+      var triggerMousedown = false;
+
+      trigger.addEventListener('mousedown', function() {
+        triggerMousedown = true;
+      });
+
+      trigger.addEventListener('click', function() {
+        triggerMousedown = false;
+        isOpen ? closeMenu() : openMenu();
+      });
+
+      /* Trigger keyboard */
+      trigger.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+          e.preventDefault();
+          if (!isOpen) openMenu();
+        }
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          if (!isOpen) {
+            openMenu();
+            requestAnimationFrame(function() {
+              var items = getItems();
+              if (items.length) items[items.length - 1].focus();
+            });
+          }
+        }
+      });
+
+      /* Menu keyboard navigation */
+      menu.addEventListener('keydown', function(e) {
+        var items = getItems();
+        var idx = items.indexOf(document.activeElement);
+        if (e.key === 'Escape') { e.preventDefault(); closeMenu({ returnFocus: true }); return; }
+        if (e.key === 'ArrowDown') { e.preventDefault(); items[(idx + 1) % items.length].focus(); return; }
+        if (e.key === 'ArrowUp') { e.preventDefault(); items[(idx - 1 + items.length) % items.length].focus(); return; }
+        if (e.key === 'Home') { e.preventDefault(); items[0].focus(); return; }
+        if (e.key === 'End') { e.preventDefault(); items[items.length - 1].focus(); return; }
+        if (e.key === 'Tab') { closeMenu(); return; }
+      });
+
+      /* Click on a menu item closes the menu */
+      menu.addEventListener('click', function(e) {
+        if (e.target.closest('[role="menuitem"]')) closeMenu();
+      });
+
+      /* Outside click/touch closes menu */
+      document.addEventListener('mousedown', function(e) {
+        if (isOpen && !triggerMousedown && !wrapper.contains(e.target)) closeMenu();
+        triggerMousedown = false;
+      });
+
+      document.addEventListener('touchstart', function(e) {
+        if (isOpen && !wrapper.contains(e.target)) closeMenu();
+      }, { passive: true });
+
+    })();
+  </script>
+</body>
+</html>
